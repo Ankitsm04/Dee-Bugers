@@ -42,7 +42,8 @@ const Register = async (req, res) => {
             message: "User registered successfully",
             token: await userCreated.generateToken(),
             userId: userCreated._id.toString(),
-            role: userCreated.role
+            role: userCreated.role,
+            username : username
         });
 
     } catch (error) {
@@ -72,7 +73,8 @@ const Login = async (req, res) => {
             message: "Logged in successfully",
             token: await userExists.generateToken(),
             userId: userExists._id.toString(),
-            role: userExists.role
+            role: userExists.role,
+            username : userExists.username
         });
 
     } catch (error) {
