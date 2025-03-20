@@ -22,7 +22,11 @@ const serviceSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',  // Reference to the provider (User model)
         required: true
-    }
+    },
+    reviews: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Review'  // Reference to Review model
+    }]
 }, { timestamps: true });
 
 const Service = mongoose.model('Service', serviceSchema);

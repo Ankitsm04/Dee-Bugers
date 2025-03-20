@@ -1,6 +1,8 @@
 const User = require('../models/user-models');
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt'); 
+const Service = require('../models/service-model');
+const Review = require('../models/Review');
 
 // Register
 const Register = async (req, res) => {
@@ -85,4 +87,95 @@ const Login = async (req, res) => {
     }
 };
 
-module.exports = { Register, Login };
+const getUserProfile = async (req, res) =>{
+    try {
+        const userId = req.user.userId;  // Get user ID from token
+        const user = await User.findById(userId).select('-password');  // Exclude the password
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        let profileData = {
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt
+            }
+        };
+
+        // If the user is a provider
+        if (user.role === 'provider') {
+            // Fetch services provided by the provider
+            const services = await Service.find({ provider: userId })
+                .populate({
+                    path: 'reviews',
+                    populate: { path: 'user', select: 'username email' }
+                });
+
+            profileData.services = services.map(service => ({
+                _id: service._id,
+                title: service.title,
+                description: service.description,
+                price: service.price,
+                image: service.image,
+                createdAt: service.createdAt,
+                reviews: service.reviews.map(review => ({
+                    _id: review._id,
+                    rating: review.rating,
+                    comment: review.comment,
+                    user: review.user
+                }))
+            }));
+
+            // Fetch reviews written by the provider (as a customer)
+            const reviewsGiven = await Review.find({ user: userId })
+                .populate({
+                    path: 'service',
+                    select: 'title description price'
+                });
+
+            profileData.reviewsGiven = reviewsGiven.map(review => ({
+                _id: review._id,
+                rating: review.rating,
+                comment: review.comment,
+                service: {
+                    _id: review.service._id,
+                    title: review.service.title,
+                    description: review.service.description,
+                    price: review.service.price
+                }
+            }));
+
+        // If the user is a customer
+        } else {
+            const reviews = await Review.find({ user: userId })
+                .populate({
+                    path: 'service',
+                    select: 'title description price'
+                });
+
+            profileData.reviews = reviews.map(review => ({
+                _id: review._id,
+                rating: review.rating,
+                comment: review.comment,
+                service: {
+                    _id: review.service._id,
+                    title: review.service.title,
+                    description: review.service.description,
+                    price: review.service.price
+                }
+            }));
+        }
+
+        res.status(200).json(profileData);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching profile", error: error.message });
+    }
+}
+
+module.exports = { Register, Login, getUserProfile };

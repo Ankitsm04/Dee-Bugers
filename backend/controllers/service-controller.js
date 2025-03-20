@@ -29,7 +29,14 @@ const createService = async (req, res) => {
 // Get all services
 const getAllServices = async (req, res) => {
     try {
-        const services = await Service.find().populate('provider', 'username email');
+        const services = await Service.find()
+            .populate('provider', 'username email')
+            .populate({
+                path: 'reviews',
+                populate: { path: 'user', select: 'username email' }  // Include review details with user info
+            })
+            .sort({ createdAt: -1 });
+
         res.status(200).json(services);
     } catch (error) {
         res.status(500).json({ message: "Error fetching services", error: error.message });

@@ -16,10 +16,13 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: "User not found" });
         }
 
-        req.user = {
-            userId: user._id.toString(),
-            role: user.role
-        };
+        // Ensure backward compatibility with existing functionality
+        req.user = req.user || {};  
+
+        // Add both `userId` and `_id` to maintain compatibility
+        req.user.userId = user._id.toString();
+        req.user._id = user._id;     // Add `_id` for mongoose references
+        req.user.role = user.role;
 
         next();
     } catch (error) {
