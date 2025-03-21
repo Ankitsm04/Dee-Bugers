@@ -1,6 +1,5 @@
 const Review = require('../models/Review');
 const Service = require('../models/service-model');
-
 // Create a new review
 const createReview = async (req, res) => {
     const { rating, comment } = req.body;
@@ -8,7 +7,6 @@ const createReview = async (req, res) => {
 
     try {
         const service = await Service.findById(serviceId);
-
         if (!service) {
             return res.status(404).json({ message: "Service not found" });
         }
@@ -27,13 +25,16 @@ const createReview = async (req, res) => {
         service.reviews.push(review._id);
         await service.save();  // Save the service to include the review ID
 
-        res.status(201).json({ message: "Review added successfully", review });
+        const populatedReview = await Review.findById(review._id).populate("user", "username email");
+
+        res.status(201).json({ message: "Review added successfully", review: populatedReview });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error", error });
     }
 };
+
 
 // Get all reviews for a service
 const getReviewsByService = async (req, res) => {
