@@ -50,7 +50,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-gray-950 via-gray-900 to-black shadow-xl">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link href="/" className="text-4xl font-extrabold bg-gradient-to-r from-pink-500 to-cyan-400 text-transparent bg-clip-text hover:scale-105 transition-transform duration-300">
+        <Link href="/" className="text-4xl font-extrabold bg-gradient-to-r from-green-500 to-cyan-400 text-transparent bg-clip-text hover:scale-105 transition-transform duration-300">
           ⚡ ServiceHub
         </Link>
 
