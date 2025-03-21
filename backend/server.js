@@ -5,11 +5,12 @@ const authRoutes = require('./routes/user-routes');
 const cors = require('cors');
 const serviceRoutes = require('./routes/service-routes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 app.use(cors({
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true // Allow cookies and authorization headers
+    credentials: true
 }));
 
 app.use(express.json({ limit: "10mb" }));
@@ -20,6 +21,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use("/api/payments", paymentRoutes);
+
 
 connectDb().then(async () => {
     app.listen(8001, () => {

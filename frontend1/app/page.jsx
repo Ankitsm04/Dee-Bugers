@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { BarLoader } from "react-spinners";
+import { useRouter } from "next/navigation";
 
 const Home = () => {
   const [services, setServices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const servicesPerPage = 8;
+  const router = useRouter();
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -30,6 +32,13 @@ const Home = () => {
 
     fetchServices();
   }, []);
+
+
+  const handlePayment = () => {
+    const amount = 100;
+    router.push(`/payment?amount=${amount}`);
+  };
+  
 
   const indexOfLastService = currentPage * servicesPerPage;
   const indexOfFirstService = indexOfLastService - servicesPerPage;
@@ -96,7 +105,8 @@ const Home = () => {
                         View Details
                       </button>
                     </Link>
-                    <button className="w-full px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium transition duration-300 hover:scale-105 hover:shadow-neon">
+                    <button className="w-full px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium transition duration-300 hover:scale-105 hover:shadow-neon" 
+                    onClick={ () => handlePayment(service.price)}>
                       Book Now
                     </button>
                   </div>
