@@ -185,6 +185,27 @@ const Profile = () => {
           </div>
         )}
 
+                {/* Reviews Given Section */}
+        {activeTab === "reviews" && (
+        <div>
+            <h3 className="text-2xl text-white font-semibold mb-4">Reviews Given</h3>
+            {reviewsGiven.length > 0 ? (
+            <div className="grid gap-6">
+                {reviewsGiven.map((review) => (
+                <div key={review._id} className="p-6 bg-white/20 dark:bg-gray-800/70 rounded-lg shadow-md">
+                    <h4 className="text-xl font-bold text-white">Service: {review.service.title}</h4>
+                    <p className="text-gray-200 mt-2"><strong>Review:</strong> {review.comment}</p>
+                    <p className="text-yellow-400 mt-1"><strong>Rating:</strong> ⭐ {review.rating}/5</p>
+                </div>
+                ))}
+            </div>
+            ) : (
+            <p className="text-gray-200 text-lg text-center">No reviews given yet.</p>
+            )}
+        </div>
+        )}
+
+
         {/* Edit Modal */}
         {editingService && (
          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[9999]">
