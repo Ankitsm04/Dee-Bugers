@@ -4,28 +4,27 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "react-feather";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null); // Track user role
+  const [role, setRole] = useState(null);
   const router = useRouter();
 
-  // Function to fetch user details from storage
+  // Fetch user details from local storage
   const fetchUser = () => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("username");
-    const userRole = localStorage.getItem("role"); // Get role
+    const userRole = localStorage.getItem("role");
 
     setUser(token && storedUser ? storedUser : null);
-    setRole(userRole || null); // Set role
+    setRole(userRole || null);
   };
 
-  // Fetch user on mount and listen for changes
   useEffect(() => {
     fetchUser();
 
-    // Listen for storage changes
     const handleStorageChange = () => {
       fetchUser();
     };
@@ -36,7 +35,7 @@ const Navbar = () => {
     };
   }, []);
 
-  // Handle logout
+  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
@@ -44,64 +43,131 @@ const Navbar = () => {
     setUser(null);
     setRole(null);
     router.push("/login");
-
-    // Force re-render by updating a dummy state
     sessionStorage.setItem("updateTrigger", Date.now().toString());
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white/10 shadow-lg">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-gray-950 via-gray-900 to-black shadow-xl">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-transparent bg-clip-text">
-          ServiceHub
+        {/* Logo */}
+        <Link href="/" className="text-4xl font-extrabold bg-gradient-to-r from-pink-500 to-cyan-400 text-transparent bg-clip-text hover:scale-105 transition-transform duration-300">
+          ⚡ ServiceHub
         </Link>
 
-        <div className="hidden md:flex space-x-8 text-gray-200 font-medium">
-          <Link href="/" className="hover:text-white transition">Home</Link>
-          <Link href="/profile" className="hover:text-white transition">Profile</Link>
-          
+        {/* Desktop Menu */}
+        <div className="hidden md:flex space-x-8 items-center">
+          {/* Styled Buttons */}
+          <Link
+            href="/"
+            className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-pink text-white font-medium shadow-neon transition duration-300 hover:scale-110"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/profile"
+            className="px-5 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium shadow-neon transition duration-300 hover:scale-110"
+          >
+            Profile
+          </Link>
+
           {role === "provider" && (
-            <Link href="/add-service" className="hover:text-white transition">
-             Add Service
+            <Link
+              href="/add-service"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium shadow-neon transition duration-300 hover:scale-110"
+            >
+              + Add Service
             </Link>
           )}
 
           {user ? (
-            <>
-              <span className="text-white">Hello, {user}!</span>
-              <button onClick={handleLogout} className="hover:text-red-400 transition">Logout</button>
-            </>
+            <div className="flex items-center space-x-6">
+              <span className="text-neon-cyan text-sm bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-2 rounded-lg shadow-md">
+                👋 Hello, <span className="font-bold">{user}</span>!
+              </span>
+
+              <button
+                onClick={handleLogout}
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-neon transition duration-300 hover:scale-110"
+              >
+                Logout
+              </button>
+            </div>
           ) : (
-            <Link href="/login" className="hover:text-white transition">Login</Link>
+            <Link
+              href="/login"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 text-white font-medium shadow-neon transition duration-300 hover:scale-110"
+            >
+              Login
+            </Link>
           )}
         </div>
 
-        <button className="md:hidden text-gray-200" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={26} /> : <Menu size={26} />}
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-neon-cyan hover:scale-110 transition-transform"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
-      {isOpen && (
-        <div className="md:hidden bg-white/10 text-gray-200">
-          <Link href="/" className="block px-6 py-3 hover:bg-white/20 transition">Home</Link>
-          <Link href="/services" className="block px-6 py-3 hover:bg-white/20 transition">Services</Link>
+      {/* Mobile Menu with Framer Motion */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden bg-gray-900 text-gray-200 shadow-lg"
+          >
+            <Link
+              href="/"
+              className="block px-6 py-4 rounded-md bg-gradient-to-r from-neon-cyan to-neon-pink text-white font-medium transition duration-300 hover:scale-105"
+            >
+              Home
+            </Link>
 
-          {role === "provider" && (
-            <Link href="/add-service" className="block px-6 py-3 hover:bg-blue-600 transition">+ Add Service</Link>
-          )}
+            <Link
+              href="/profile"
+              className="block px-6 py-4 rounded-md bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium transition duration-300 hover:scale-105"
+            >
+              Profile
+            </Link>
 
-          {user ? (
-            <>
-              <span className="block px-6 py-3 text-white">Hello, {user}!</span>
-              <button onClick={handleLogout} className="block px-6 py-3 text-left w-full hover:bg-red-600 transition">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link href="/login" className="block px-6 py-3 hover:bg-white/20 transition">Login</Link>
-          )}
-        </div>
-      )}
+            {role === "provider" && (
+              <Link
+                href="/add-service"
+                className="block px-6 py-4 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium transition duration-300 hover:scale-105"
+              >
+                + Add Service
+              </Link>
+            )}
+
+            {user ? (
+              <>
+                <span className="block px-6 py-4 text-sm bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg shadow-md">
+                  👋 Hello, <span className="font-bold">{user}</span>!
+                </span>
+
+                <button
+                  onClick={handleLogout}
+                  className="block w-full px-6 py-4 rounded-md bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium transition duration-300 hover:scale-105"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="block px-6 py-4 rounded-md bg-gradient-to-r from-green-500 to-teal-500 text-white font-medium transition duration-300 hover:scale-105"
+              >
+                Login
+              </Link>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

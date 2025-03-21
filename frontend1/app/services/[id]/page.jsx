@@ -12,38 +12,43 @@ const ServiceDetails = () => {
   const [rating, setRating] = useState(5);
   const [userId, setUserId] = useState(null);
   const [hover, setHover] = useState(null);
+  const [progress, setProgress] = useState(0);
 
-    // Move fetchService outside the useEffect so it's accessible in handleAddReview
-    const fetchService = async () => {
-        try {
-          const res = await fetch(`http://localhost:8001/api/services`);
-          if (!res.ok) throw new Error("Failed to fetch service details");
-          const data = await res.json();
-    
-          const matchedService = data.find((item) => item._id === id);
-          if (!matchedService) throw new Error("Service not found");
-    
-          setService(matchedService);
-        } catch (error) {
-          setError(error.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-          try {
-            const decodedToken = JSON.parse(atob(token.split(".")[1])); // Decode JWT
-            setUserId(decodedToken.userId);
-          } catch (error) {
-            console.error("Failed to parse token:", error);
-          }
-        }
-    
-        if (id) fetchService();
-      }, [id]);
+  const fetchService = async () => {
+    setProgress(30); // Start loading bar
+    try {
+      const res = await fetch(`http://localhost:8001/api/services`);
+      if (!res.ok) throw new Error("Failed to fetch service details");
+
+      setProgress(60); // Midway point
+      const data = await res.json();
+
+      const matchedService = data.find((item) => item._id === id);
+      if (!matchedService) throw new Error("Service not found");
+
+      setService(matchedService);
+      setProgress(100); // Complete
+    } catch (error) {
+      setError(error.message);
+      setProgress(100);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decodedToken = JSON.parse(atob(token.split(".")[1])); 
+        setUserId(decodedToken.userId);
+      } catch (error) {
+        console.error("Failed to parse token:", error);
+      }
+    }
+
+    if (id) fetchService();
+  }, [id]);
 
   const handleAddReview = async () => {
     if (!userId) {
@@ -64,11 +69,6 @@ const ServiceDetails = () => {
       if (!res.ok) throw new Error("Failed to add review");
 
       fetchService();
-    //   const newReview = await res.json();
-    //   setService((prev) => ({
-    //     ...prev,
-    //     reviews: [...prev.reviews, newReview],
-    //   }));
       setReviewText("");
       setRating(5);
     } catch (error) {
@@ -82,8 +82,9 @@ const ServiceDetails = () => {
       alert("You must be logged in to delete a review.");
       return;
     }
+
     const token = localStorage.getItem("token");
-    console.log(token);
+
     try {
       const res = await fetch(`http://localhost:8001/api/reviews/${reviewId}`, {
         method: "DELETE",
@@ -105,96 +106,119 @@ const ServiceDetails = () => {
     }
   };
 
-  if (loading) return <p className="text-center text-gray-200 mt-6">Loading...</p>;
-  if (error) return <p className="text-center text-red-500 mt-6">{error}</p>;
-  if (!service) return <p className="text-center text-gray-200 mt-6">Service not found</p>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-900">
+        <p className="text-center text-gray-200">Loading...</p>
+      </div>
+    );
+
+  if (error)
+    return <p className="text-center text-red-500 mt-6">{error}</p>;
+
+  if (!service)
+    return <p className="text-center text-gray-200 mt-6">Service not found</p>;
 
   return (
-    <div className="flex justify-center items-start min-h-screen bg-gray-900">
-      <div className="max-w-4xl min-w-[200px] my-6 p-8 bg-gray-800 shadow-md rounded-lg text-white">
-        
-        {/* Service Image */}
-        <div className="w-full flex justify-center">
-          <img 
-            src={service.image} 
-            alt={service.title} 
-            className="w-full max-h-80 object-cover rounded-lg shadow-md"
-          />
-        </div>
+    <div className="relative">
+      {/* Loading Bar */}
+      <div
+        className="fixed top-0 left-0 h-1 bg-blue-500 transition-all duration-300"
+        style={{ width: `${progress}%` }}
+      />
 
-        {/* Service Details */}
-        <h1 className="text-3xl font-bold mt-4 bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text">
-          {service.title}
-        </h1>
-        <p className="text-gray-400 mt-2">{service.description}</p>
+      <div className="flex justify-center items-start min-h-screen bg-gray-900">
+        <div className="max-w-4xl min-w-[200px] my-12 p-10 bg-gray-800 shadow-2xl rounded-lg text-white transition-transform duration-300 hover:scale-105">
 
-        {/* Service Provider */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-200">Service Provider</h2>
-          <p className="text-gray-400 font-medium">{service.provider?.username || "Unknown Provider"}</p>
-        </div>
+          {/* Service Image */}
+          <div className="w-full flex justify-center">
+            <img
+              src={service.image}
+              alt={service.title}
+              className="w-full max-h-96 object-cover rounded-lg shadow-lg hover:shadow-2xl transition duration-300"
+            />
+          </div>
 
-        {/* Price */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-200">Price</h2>
-          <p className="text-xl font-bold text-green-400">₹{service.price}</p>
-        </div>
+          {/* Service Details */}
+          <h1 className="text-4xl font-bold mt-6 bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text">
+            {service.title}
+          </h1>
+          <p className="text-gray-300 mt-4 leading-7">{service.description}</p>
 
-        {/* Reviews Section */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-200 mb-4">Customer Reviews</h2>
-          {service.reviews && service.reviews.length > 0 ? (
-            <div className="space-y-4">
-              {service.reviews.map((review) => {
-                const storedUsername = localStorage.getItem("username");
+          {/* Service Provider */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-400">Service Provider</h2>
+            <p className="text-gray-300 font-medium">
+              {service.provider?.username || "Unknown Provider"}
+            </p>
+          </div>
 
-                return (
-                  <div
-                    key={review._id}
-                    className="bg-gray-700 p-4 rounded-lg shadow-md flex items-start space-x-4"
-                  >
-                    {/* Profile Icon */}
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-lg">
-                      {review.user?.username 
-                        ? review.user.username[0].toUpperCase() 
-                        : "?"}
-                    </div>
+          {/* Price */}
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-400">Price</h2>
+            <p className="text-3xl font-bold text-green-400">₹{service.price}</p>
+          </div>
 
-                    {/* Review Content */}
-                    <div className="flex-1">
-                      <p className="text-gray-300 font-semibold">
-                        {review.user?._id === userId ? storedUsername : review.user?.username || "Unknown User"}
-                      </p>
-                      <div className="flex items-center space-x-1 text-yellow-400">
-                        {Array(review.rating)
-                          .fill()
-                          .map((_, i) => (
-                            <span key={i}>⭐</span>
-                          ))}
-                      </div>
-                      <div className="text-white font-bold"> {review.rating} / 5</div>
-                      <p className="text-gray-400 mt-1">{review.comment}</p>
-                    </div>
+          {/* Reviews Section */}
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold text-gray-400 mb-4">
+              Customer Reviews
+            </h2>
+            {service.reviews && service.reviews.length > 0 ? (
+              <div className="space-y-6">
+                {service.reviews.map((review) => {
+                  const storedUsername = localStorage.getItem("username");
 
-                    {/* Delete Button (Only for Review Owner) */}
-                    {review.user && userId === review.user._id && (
-                    <button
-                        onClick={() => handleDeleteReview(review._id)}
-                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded"
+                  return (
+                    <div
+                      key={review._id}
+                      className="bg-gray-700 p-6 rounded-lg shadow-lg transition duration-300 hover:scale-105"
                     >
-                        Delete
-                    </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-500 mt-2">No reviews yet.</p>
-          )}
-        </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-lg">
+                          {review.user?.username
+                            ? review.user.username[0].toUpperCase()
+                            : "?"}
+                        </div>
 
-        {/* Add Review Form */}
+                        <div className="flex-1">
+                          <p className="text-gray-300 font-semibold">
+                            {review.user?._id === userId
+                              ? storedUsername
+                              : review.user?.username || "Unknown User"}
+                          </p>
+
+                          <div className="flex items-center space-x-1 mt-1 text-yellow-400">
+                            {Array(review.rating)
+                              .fill()
+                              .map((_, i) => (
+                                <span key={i}>⭐</span>
+                              ))}
+                          </div>
+
+                          <p className="text-gray-400 mt-1">{review.comment}</p>
+                        </div>
+
+                        {review.user && userId === review.user._id && (
+                          <button
+                            onClick={() => handleDeleteReview(review._id)}
+                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded transition duration-300"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500">No reviews yet.</p>
+            )}
+          </div>
+
+          {/* Add Review Form */}
+          {/* Add Review Form */}
         {userId && (
           <div className="mt-6">
             <h2 className="text-lg font-semibold text-gray-200 mb-2">Add a Review</h2>
@@ -230,6 +254,7 @@ const ServiceDetails = () => {
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
