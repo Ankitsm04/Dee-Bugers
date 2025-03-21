@@ -5,6 +5,9 @@ const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [activeTab, setActiveTab] = useState("services");
   const [editingService, setEditingService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const [updatedService, setUpdatedService] = useState({
     title: "",
     description: "",
@@ -36,8 +39,10 @@ const Profile = () => {
 
       const data = await res.json();
       setUserData(data);
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching profile:", error);
+      setLoading(false);
     }
   };
 
@@ -45,13 +50,21 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  if (!userData) {
+  if (loading) {
     return (
       <div className="text-center text-gray-400 mt-10 text-lg">Loading...</div>
     );
   }
 
-  const { user, services, reviewsGiven } = userData;
+  if (!userData) {
+    return (
+      <div className="text-center text-gray-400 mt-10 text-lg">
+        No profile data found.
+      </div>
+    );
+  }
+
+  const { user, services } = userData;
   const isProvider = user.role === "provider";
 
   // Handle image upload
@@ -77,6 +90,7 @@ const Profile = () => {
       price: service.price,
       image: service.image,
     });
+    setIsModalOpen(true);
   };
 
   // Update service
@@ -97,11 +111,12 @@ const Profile = () => {
       );
 
       if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
+        throw new Error(`Failed to update service!`);
       }
 
-      fetchProfile();
+      await fetchProfile();
       setEditingService(null);
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Error updating service:", error);
     }
@@ -113,6 +128,7 @@ const Profile = () => {
       "Are you sure you want to delete this service?"
     );
     if (!confirmDelete) return;
+
     try {
       const token = localStorage.getItem("token");
 
@@ -127,10 +143,10 @@ const Profile = () => {
       );
 
       if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
+        throw new Error(`Failed to delete service!`);
       }
 
-      fetchProfile();
+      await fetchProfile();
     } catch (error) {
       console.error("Error deleting service:", error);
     }
@@ -156,24 +172,13 @@ const Profile = () => {
         {isProvider && (
           <div className="flex justify-center mt-12 space-x-8">
             <button
-              className={`px-8 py-3 rounded-full text-lg font-semibold transition-all ${
-                activeTab === "services"
-                  ? "bg-cyan-500 shadow-lg scale-110"
-                  : "bg-gray-700 hover:bg-cyan-400/80"
-              }`}
+              className={`px-8 py-3 rounded-full text-lg font-semibold transition-all ${activeTab === "services"
+                ? "bg-cyan-500 shadow-lg scale-110"
+                : "bg-gray-700 hover:bg-cyan-400/80"
+                }`}
               onClick={() => setActiveTab("services")}
             >
               💼 Services
-            </button>
-            <button
-              className={`px-8 py-3 rounded-full text-lg font-semibold transition-all ${
-                activeTab === "reviews"
-                  ? "bg-purple-500 shadow-lg scale-110"
-                  : "bg-gray-700 hover:bg-purple-400/80"
-              }`}
-              onClick={() => setActiveTab("reviews")}
-            >
-              ⭐ Reviews
             </button>
           </div>
         )}
@@ -220,28 +225,64 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Reviews Section */}
-        {activeTab === "reviews" && (
-          <div className="mt-12">
-            <h3 className="text-4xl font-bold mb-8 text-purple-400">Reviews Given</h3>
-            {reviewsGiven.length > 0 ? (
-              <div className="grid gap-10">
-                {reviewsGiven.map((review) => (
-                  <div
-                    key={review._id}
-                    className="p-8 rounded-xl bg-black/40 shadow-lg border border-gray-700/50 hover:scale-105 transition-transform"
-                  >
-                    <h4 className="text-2xl font-bold">{review.service.title}</h4>
-                    <p className="mt-3">{review.comment}</p>
-                    <p>⭐ {review.rating}/5</p>
-                  </div>
-                ))}
+        {/* Edit Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="bg-gray-900 p-10 rounded-lg shadow-lg max-w-3xl w-full min-h-[80vh]">
+              <h3 className="text-4xl font-bold mb-6">Edit Service</h3>
+
+              <input
+                value={updatedService.title}
+                onChange={(e) =>
+                  setUpdatedService({ ...updatedService, title: e.target.value })
+                }
+                className="w-full p-4 mb-6 text-lg rounded-lg"
+                placeholder="Title"
+              />
+
+              <textarea
+                value={updatedService.description}
+                onChange={(e) =>
+                  setUpdatedService({ ...updatedService, description: e.target.value })
+                }
+                className="w-full p-4 mb-6 text-lg rounded-lg min-h-[200px]"
+                placeholder="Description"
+              />
+
+              <input
+                value={updatedService.price}
+                onChange={(e) =>
+                  setUpdatedService({ ...updatedService, price: e.target.value })
+                }
+                className="w-full p-4 mb-6 text-lg rounded-lg"
+                placeholder="Price"
+              />
+
+              <input
+                type="file"
+                onChange={handleImageChange}
+                className="w-full p-4 mb-6 text-lg rounded-lg"
+              />
+
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="bg-gray-600 hover:bg-gray-700 px-8 py-3 rounded-lg text-white text-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateService}
+                  className="bg-cyan-500 hover:bg-cyan-600 px-8 py-3 rounded-lg text-white text-lg"
+                >
+                  Save
+                </button>
               </div>
-            ) : (
-              <p className="text-center mt-8">No reviews given yet.</p>
-            )}
+            </div>
           </div>
         )}
+
+
       </div>
     </div>
   );

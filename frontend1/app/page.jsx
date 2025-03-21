@@ -34,8 +34,7 @@ const Home = () => {
   }, []);
 
 
-  const handlePayment = () => {
-    const amount = 100;
+  const handlePayment = (amount) => {
     router.push(`/payment?amount=${amount}`);
   };
   

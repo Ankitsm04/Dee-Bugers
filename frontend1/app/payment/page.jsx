@@ -1,31 +1,43 @@
 "use client";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-
-const PaymentPage = () => {
-  const searchParams = useSearchParams();
-  const amount = searchParams.get("amount") || 0;
+const Payment = () => {
+  const searchParams = useSearchParams(); 
+  const router = useRouter();
   const [order, setOrder] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Extract the amount from query parameter
+  const amount = searchParams.get("amount");
 
   useEffect(() => {
-    if (amount > 0) {
-      fetch("http://localhost:8001/api/payments/create-order", {
+    if (amount && amount > 0) {
+      createOrder(amount);
+    }
+  }, [amount]);
+
+  const createOrder = async (amt) => {
+    try {
+      const response = await fetch("http://localhost:8001/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ amount }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setOrder(data.order);
-        })
-        .catch((error) => {
-          console.error("Payment Error:", error);
-        });
+        body: JSON.stringify({ amount: amt }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create order");
+      }
+
+      const data = await response.json();
+      setOrder(data.order);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to create order");
     }
-  }, [amount]);
+  };
 
   const loadRazorpay = () => {
     return new Promise((resolve) => {
@@ -35,32 +47,31 @@ const PaymentPage = () => {
       }
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => {
-        resolve(true);
-      };
-      script.onerror = () => {
-        resolve(false);
-      };
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
   };
 
   const handlePayment = async () => {
+    if (!order) return;
+
     const loaded = await loadRazorpay();
     if (!loaded) {
-      alert("Failed to load Razorpay SDK. Please refresh and try again.");
+      alert("Failed to load Razorpay SDK");
       return;
     }
 
     const options = {
-      key: "rzp_test_FuEYwdIYr3IYz5", // Replace with your Razorpay Key ID
-      amount: order.amount, // Amount in paise
+      key: "rzp_test_veyLmEci8r0VBl",   // Test Razorpay key
+      amount: order.amount,              // Amount in paise
       currency: "INR",
       name: "Your Company",
       description: "Test Payment",
       order_id: order.id,
       handler: function (response) {
         alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+        router.push("/");  // Redirect to home or success page
       },
       prefill: {
         name: "John Doe",
@@ -68,7 +79,7 @@ const PaymentPage = () => {
         contact: "9876543210",
       },
       theme: {
-        color: "#3399cc",
+        color: "#0a81ab",
       },
     };
 
@@ -77,23 +88,27 @@ const PaymentPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold">Payment Page</h1>
-      {order ? (
-        <>
-          <p>Order Created: {order.id}</p>
-          <button
-            className="bg-green-500 text-white px-4 py-2 mt-4"
-            onClick={handlePayment}
-          >
-            Pay Now
-          </button>
-        </>
-      ) : (
-        <p>Creating Order...</p>
-      )}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 text-white">
+      <div className="bg-white/10 backdrop-blur-md p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center mb-6">Test Payment</h1>
+
+        {amount ? (
+          <>
+            <p className="text-lg mb-4">Amount: ₹{amount}</p>
+            <button
+              onClick={handlePayment}
+              disabled={!order}
+              className="w-full mt-4 px-4 py-3 rounded-md text-white font-bold bg-green-500 hover:bg-green-600 transition"
+            >
+              {isProcessing ? "Processing..." : `Pay ₹${amount}`}
+            </button>
+          </>
+        ) : (
+          <p className="text-red-500 text-lg">No amount specified.</p>
+        )}
+      </div>
     </div>
   );
 };
 
-export default PaymentPage;
+export default Payment;
